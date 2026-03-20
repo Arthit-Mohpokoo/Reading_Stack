@@ -1,35 +1,26 @@
-from fastapi import FastAPI , HTTPException
-from pymongo import MongoClient
-from pydantic import BaseModel
-from bson.objectid import ObjectId
+from fastapi import FastAPI
+from app.routes.auth import routes
+from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
+import importlib
 
-app = FastAPI()
+app=FastAPI(title= "Reading FAST API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-client = MongoClient("mongodb://localhost:27017/")
-db = client["Reading_Stack"]
-collection = db["user"]
+route_path = Path(__file__).parent / "app" / "routes"
 
-class User(BaseModel):
-    name:str
-    count:int
-
-@app.get("/")
-async def root():
-    return {"meassage":"hello world"}
-
-# @app.post("/user")
-# async def create_user(loguser:User):
-#     result = collection.insert_one(loguser.dict())
-#     return{
-#         "id" : str(result.inserted_id),
-#         "name": loguser.name,
-#         "count" : loguser.count
-#     }
+for file in route_path.glob("*.py"):
+    if file.name == "__init__.py":
+        continue
+    module_name = file.stem #ย่อมาจากชื่อไฟล์
+    module = importlib.import_module(f"app.routes.{module_name}") #pathที่มา
+    # print(f"app.routes.{module_name}") # check path api
     
-# @app.get("/user/{user_id}")
-# async def read_user(user_id:str):
-#     iduser = collection.find_one({"_id": ObjectId(user_id)})
-#     if iduser :
-#         return{"id": str(iduser["_id"]),"name": iduser["name"],"count": iduser["count"]}
-#     else:
-#         raise HTTPException(status_code=404, detail="iduser not found")
+    if hasattr(module , "routes"):
+        app.include_router(module.routes, prefix="/api")
+
