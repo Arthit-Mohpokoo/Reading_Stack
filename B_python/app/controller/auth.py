@@ -8,7 +8,7 @@ load_dotenv()
 async def register(user:User):
     try:
         email = user.email.lower()
-        existing = collectionUser.find_one({"email": user.email})
+        existing = collectionUser.find_one({"email": email})
         if existing:
             raise HTTPException(status_code=409, detail="อีเมลนี้มีอยู่แล้ว")
         
