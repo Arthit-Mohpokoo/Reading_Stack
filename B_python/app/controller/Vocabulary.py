@@ -123,11 +123,3 @@ async def vocbDelete(vocab_id: str):
         raise HTTPException(status_code=500, detail="เกิดข้อผิดพลาด")
 
 
-# async def vocabListid(vocab_id:str)
-#     try:
-#     collectionVocabulary.find_one({"_id": ObjectId(vocab_id)})
-#     except HTTPException:
-#         raise
-#     except Exception as err:
-#         print(f"เกิดปัญหาระหว่างดำเนินการ {err}")
-#         raise HTTPException(status_code=500, detail="เกิดข้อผิดพลาด")
