@@ -1,10 +1,13 @@
 from app.config.model import collectionUser , User,LoginUser
-from fastapi import HTTPException
+from fastapi import HTTPException,Depends
+from datetime import datetime, timedelta
+from app.middleware.auth import authCheck
 import os
 import bcrypt
 import jwt
 from dotenv import load_dotenv
 load_dotenv()
+
 async def register(user:User):
     try:
         email = user.email.lower()
@@ -46,19 +49,36 @@ async def login (user:LoginUser):
         payload ={
             "id": str(checkuser["_id"]),
             "email":checkuser["email"],
-            "role" : checkuser["role"]
+            "role" : checkuser["role"],
+            "exp": datetime.utcnow() + timedelta(days=1)
         }
         token = jwt.encode(payload, os.getenv("SECRET"), algorithm="HS256")
-        # encode = jwt.encode({payload},"secret", algorithm="HS256") #อันเก่าที่ผิดพลาด
         
         return {
             "id": str(checkuser["_id"]),
             "email": checkuser["email"],
+            "role" : checkuser["role"],
+            "token": token ,
             "message": "เข้าสู่ระบบสำเร็จ",
-            "token": token
         }
     except HTTPException:
         raise
     except Exception as err:
         print(f"เกิดข้อผิดพลาด: {err}")
         raise HTTPException(status_code=500, detail="เกิดข้อผิดพลาดภายใน")
+    
+async def conuser(user = Depends(authCheck)):
+    try:
+        email = user["email"]
+        row = collectionUser.find_one({"email": email},{"password": 0})
+        if not row:
+            raise HTTPException(status_code=404, detail="ไม่พบผู้ใช้")
+        row["_id"] = str(row["_id"])
+        return row
+    except HTTPException:
+        raise
+    except Exception as err:
+        print(f"เกิดข้อผิดพลาด: {err}")
+        raise HTTPException(status_code=500, detail="เกิดข้อผิดพลาดภายใน")
+    
+    

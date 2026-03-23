@@ -7,15 +7,21 @@ routes= APIRouter()
 
 @routes.post("/vocabulary")
 async def root(
+    userid: str = Form(...),
     name: str = Form(...),
     read: str = Form(...),
     images: UploadFile = File(None)
 ):
-    return await vocabC(name, read, images)
+    try:
+        return await _create_vocab(userid, name, read, images) 
+    except HTTPException:
+        raise
+    except Exception as err:
+        raise HTTPException(status_code=500, detail="เกิดข้อผิดพลาด")
 
 @routes.put("/vocabulary/{vocab_id}")
 async def root(
-    vocab_id: str,
+    
     name: str = Form(...),
     read: str = Form(...),
     images: UploadFile = File(None)

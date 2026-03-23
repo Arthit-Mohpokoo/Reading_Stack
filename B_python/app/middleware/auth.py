@@ -2,7 +2,9 @@ import jwt
 import os
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends, HTTPException
-
+from dotenv import load_dotenv
+load_dotenv()
+security = HTTPBearer()
 async def authCheck(credentials: HTTPAuthorizationCredentials = Depends(security)): 
     #Depends(security) class fastapi ดึง token จาก Authorization: Bearer 
     #Depends มีเอาไว้รัน ใน () ก่อนเเล้วเอาผลลัพธ์มา

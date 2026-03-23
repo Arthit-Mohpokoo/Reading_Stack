@@ -3,18 +3,18 @@ from app.config.model import collectionVocabulary ,collectionVocabularyReview
 import shutil , uuid,os
 from bson import ObjectId
 from datetime import datetime
-#uuid เอาสุมชื่อไฟล์ไม่ซ้ำกัน
 
 ALLOWED_EXT = {".png", ".jpg", ".jpeg", ".webp"}
 UPLOAD_DIR = "app/upload/read_img/"
 
 async def vocabC(
+    userid: str = Form(...),
     name: str = Form(...),
     read: str = Form(...),
     images: UploadFile = File(None)
 ):
     try:
-        if not name:
+        if not name or not userid:
             raise HTTPException(status_code=409, detail="กรุณากรอกชื่อให้เรียบร้อย")
         if not read:
             raise HTTPException(status_code=409, detail="กรุณากรอกคำอ่านให้เรียบร้อย")
@@ -26,16 +26,18 @@ async def vocabC(
             filename = f"{uuid.uuid4()}{ext}" 
             img_path = f"{UPLOAD_DIR}{filename}"
             
+            contents = await images.read()
             with open(img_path, "wb") as f:
-                shutil.copyfileobj(images.file, f)
+                f.write(contents)
             #shutil.copyfileobj คัดลอกข้อมูลจาก file object หนึ่งไปยังอีก file object หนึ่ง
             
         result = collectionVocabulary.insert_one({
+            "userId": userid,
             "name": name,
             "read": read,
             "images": img_path,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "created_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         })
         vocab_id = str(result.inserted_id)
         
@@ -43,8 +45,8 @@ async def vocabC(
             "vocab_id": vocab_id,
             "stage": 0,
             "ease_factor": 2.5,
-            "review_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
+            "review_at": datetime.now(timezone.utc),
+            "updated_at": datetime.now(timezone.utc)
         })
         print(f"review inserted: {result_review.inserted_id}")
         return {"id": str(result.inserted_id), "name": name, "read": read, "images": img_path}
@@ -119,3 +121,13 @@ async def vocbDelete(vocab_id: str):
     except Exception as err:
         print(f"เกิดปัญหาระหว่างดำเนินการ {err}")
         raise HTTPException(status_code=500, detail="เกิดข้อผิดพลาด")
+
+
+# async def vocabListid(vocab_id:str)
+#     try:
+#     collectionVocabulary.find_one({"_id": ObjectId(vocab_id)})
+#     except HTTPException:
+#         raise
+#     except Exception as err:
+#         print(f"เกิดปัญหาระหว่างดำเนินการ {err}")
+#         raise HTTPException(status_code=500, detail="เกิดข้อผิดพลาด")
